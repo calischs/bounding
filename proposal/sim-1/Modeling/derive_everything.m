@@ -14,17 +14,23 @@ name = 'bounding';
 %define helpful rotated coordinate systems for defining points on the
 %robot.
 
-%If the spine has length $L$, the radius of curvature is
-%$L/psi$.
+%If the spine has length $L$, the radius of curvature is $L/psi$.  We equip
+%the spine with a torsional spring, at this point defined somewhat
+%arbitrarily as $torque = kappa * psi$.  We will have to determine the best
+%ways to physcially implement the spine spring, and what force law it
+%obeys.
 
 % Define variables for time, generalized coordinates + derivatives, controls, and parameters 
+% the robot has internal configuration variables a1,a2,phi
+% as well as rigid body motion variables x,y,th
 syms    t ...               %time
         y dy ddy ...        %height of back foot
         x dx ddx ...        %horizontal position of back foot
         th dth ddth ...     %body pitch angle
         a1 da1 dda1 ...     %back leg angle
         a2 da2 dda2 ...     %front leg angle
-        phi dphi ddphi psi ...  %spine motor angle, psi = (mtd/sep)*phi
+        phi dphi ddphi ...  %phi is spine motor angle
+        psi dpsi ...        %psi = (mtd/sep)*phi is spine bend angle, defined only for convenience...
         tau1 tau2 tau3 ...  %control torques at back leg, front leg, and spine
         Fx1 Fy1 Fx2 Fy2 ... %constraint forces for back foot and front foot
         ma1 ma2 ...         %mounting angles of back and front legs (0 -> perpendicular, + rotates ccw) 
@@ -33,23 +39,26 @@ syms    t ...               %time
         m11 m12 m21 m22 ... %leg segment masses
         I11 I12 I21 I22 ... %leg segment MOIs
         ls cs kappa ms sep mtd... %spine length, center of mass (along), spine spring constant, mass, tendon sep, motor takeup diam
-        mh g real           %motor mass (one at hip, one at shoulder), gravity, type
+        mmh g real           %motor mass (one at hip, one at shoulder), gravity, type
 
-% Group them for later use.
+% I'm still not sure how to deal with indeterminant configurations (e.g.,
+% when both feet are on the ground).  This possibility explains the
+% difference in numbers of generalized coordinates (6) and generalized
+% forces (7).  I hope that when writing the rest of the simulator this
+% confusion clears up.
+
 q   = [x; y; th; a1; a2; phi];      % generalized coordinates
 dq  = [dx; dy; dth; da1; da2; dphi];    % first time derivatives
 ddq = [ddx; ddy; ddth; dda1; dda2; ddphi];  % second time derivatives
 u   = [tau1; tau2; tau3];  % control forces and moments
-c   = [Fy1; Fy2];           % constraint forces and moments
+c   = [Fx1; Fy1; Fx2; Fy2];           % constraint forces and moments
 p   = [ l; c; m; I; ...
-        ls; cs; ms; Is; sep; mtd; ...
+        ls; cs; kappa; ms; sep; mtd; ...
         mmh; g];  % parameters
 
 %%% Calculate important vectors and their time derivatives.
 
-% Define fundamental unit vectors.  The first element should be the
-% horizontal (+x cartesian) component, the second should be the vertical (+y
-% cartesian) component, and the third should be right-handed orthogonal.
+% Define fundamental unit vectors.
 ihat = [1; 0; 0];
 jhat = [0; 1; 0];
 khat = cross(ihat,jhat);
@@ -72,10 +81,7 @@ dpsi = (mtd/sep)*dphi;
 [~,rj2hat] = rotated_coordinates(th+psi+ma2+a2);  %pointing elbow to shoulder in j
 [~,sj2hat] = rotated_coordinates(th+psi+ma2-a2);  %pointing front foot to elbow in j
 
-% A handy anonymous function for taking first and second time derivatives
-% of vectors using the chain rule.  See Lecture 6 for more information. 
 ddt = @(r) jacobian(r,[q;dq])*[dq;ddq]; 
-
 
 % Define vectors 
 f1 = x*ihat + y*jhat;   %origin to rear foot
@@ -109,12 +115,11 @@ rcm11 = f1 + c11*sj1hat;
 rcm12 = m1 + c12*rj1hat;
 rcm21 = f2 + c21*sj2hat;
 rcm22 = m2 + c22*rj2hat;
-rcms = sum(spine_points,2)/n; %let's assume the spine consists of point masses at each spine point
 rm1 = h1; %motors
 rm2 = h2;
 
-%moment of inertia of spine relative to COM
-Is = ms*sum( dot(spine_points-rcms, spine_points-rcms) );
+rcms = sum(spine_points,2)/n; %let's assume the spine consists of point masses at each spine point
+Is = ms*sum( dot(spine_points-rcms, spine_points-rcms) ); %moment of inertia of spine relative to COM
 
 % Take time derivatives of vectors as required for kinetic energy terms.
 drcm11 = ddt(rcm11);
@@ -126,7 +131,6 @@ drm1 = ddt(h1);
 drm2 = ddt(h2);
 
 %%% Calculate Kinetic Energy, Potential Energy, and Generalized Forces
-
 % F2Q calculates the contribution of a force to all generalized forces
 % for forces, F is the force vector and r is the position vector of the 
 % point of force application
@@ -158,9 +162,7 @@ V = g*( m11*dot(rcm11, jhat) + ...
         m22*dot(rcm22, jhat) ) + ...
     (1/2)*kappa*psi^2;
 
-
-% Define contributions to generalized forces.  See Lecture 6 formulas for
-% contributions to generalized forces.
+% Define contributions to generalized forces.
 QFx1 = F2Q(Fx1*ihat,f1);
 QFy1 = F2Q(Fy1*jhat,f1);
 QFx2 = F2Q(Fx2*ihat,f2);
@@ -172,9 +174,7 @@ Qtau3 = M2Q(-tau3*khat, -dpsi*khat); %not sure about this one.
 % Sum generalized force contributions.
 Q = QFx1+QFy1+QFx2+QFy2 + Qtau1+Qtau2+Qtau3;
 
-% Assemble R, the array of cartesian coordinates of the points to be
-% animated.  Point numbers correspond with the order in which they appear
-% in the array.
+% Assemble R, the array of cartesian coordinates of the points to be animated.
 R = [f1(1:2); m1(1:2); h1(1:2); f2(1:2); m2(1:2); h2(1:2); spine_points; vertebra]; %not sure on dimensions of this array yet
 
 % Calculate rcm, the location of the center of mass
