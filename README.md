@@ -1,6 +1,6 @@
 bounding
 ========
-
+![diagram](/proposal/diagram-1.svg)
 project for 2.S997
 
 
