@@ -1,20 +1,48 @@
 function dz = dynamics_continuous(t,z,p,iphase)
 
+%phases:
+% 1: no feet in contact
+% 2: rear foot in contact only
+% 3: front foot in contact only
+% 4: both feet in contact
+
 u = control_laws(t,z,p,iphase); % get the control
 A = A_all(z,p);                 % get the full A matrix
 b = b_all(z,u,p);               % get the full b vector
 
-if iphase == 2  
-    % in flight phase
-    % evaluate dz based on t, z p, and iphase
-    A = A(1:2,1:2); %note, in flight, we only care about the generalized coordinates, y & th
-    b = b(1:2);
-else
-    % in stance phase
-    % evaluate dz based on t, z p, and iphase
-    % keep all coordinates and constraints
+% evaluate dz based on t, z p, and iphase
+switch iphase
+    case 1
+        %flight
+        A = A(1:6,1:6); %only care about x, y, th, a1, a2, phi
+        b = b(1:6);
+    case 2
+        %rear contact
+        i = [1,2,3,4,5,6,7,8];
+        A = A(i,i); %care about x, y, th, a1, a2, phi, fx1, fy1
+        b = b(i);
+    case 3
+        %front contact
+        i = [1,2,3,4,5,6,9,10];
+        A = A(i,i); %care about x, y, th, a1, a2, phi, fx2, fy2
+        b = b(i);
+    case 4
+        %both contact
+        i = [1,2,3,4,5,6,7,8,10];
+        A = A(i,i); %care about x, y, th, a1, a2, phi, fx1, fy1, fy2 (leave out one contact force to avoid overconstraint...)
+        b = b(i);
+    otherwise
+        %something wrong
+        assert(false);
 end
-x = A\b;                    % solve system for accelerations (and possibly contact forces)
-dz(1:2:3,1) = z(2:2:4,1);   % set speeds from state
-dz(2:2:4) = x(1:2);         % set accelerations from solution
+
+x = A\b; % solve system for accelerations (and possibly contact forces)
+
+dz(1:2:12,1) = z(2:2:12,1);   % set speeds from state
+dz(2:2:12,1) = x(1:6);         % set accelerations from solution
+
+%tau1 = u(1);
+%tau2 = u(2);
+%tau3 = u(3);
+%dz(5) = tau^2; %need to think more about this.
 end

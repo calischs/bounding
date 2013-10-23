@@ -177,8 +177,7 @@ Q = QFx1+QFy1+QFx2+QFy2 + Qtau1+Qtau2+Qtau3;
 % 1:2 leaves out z coordinate
 %R = [f1(1:2); m1(1:2); h1(1:2); f2(1:2); m2(1:2); h2(1:2); spine_points(1:2,:); vertebra(1:2,:)];
 R = [f1(1:2); m1(1:2); f2(1:2); m2(1:2); spine_points(1:2,:); vertebra(1:2,:)]; %including hip/shoulder explicitly is redundant..
-%maybe eventually we should model a first and last segment w specified
-%lengths
+%maybe eventually we should model a first and last segment w specified lengths
 
 % Calculate rcm, the location of the center of mass
 rcm = (m11*rcm11 + m12*rcm12 + m21*rcm21 + m22*rcm22 + mh*h1 + mh+h2 + ms*rcms)/(m11+m12+m21+m22+mh+mh+ms);
