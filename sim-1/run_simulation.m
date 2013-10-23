@@ -10,7 +10,6 @@ clear
 setpath                                     % add AutoDerived, Modeling, and Visualization folders to Matlab path
 
 p = parameters();                               % get parameters from file
-num_sps = p(end);
 %initial: [x dx y dy th dth a1 da1 a2 da2 phi dphi]
 z0 =      [0  0 0  0  0   0  0   0  0   0   0    0]; 
 tspan = [0 2.];                                 % set time span
@@ -22,6 +21,7 @@ tspan = [0 2.];                                 % set time span
 % Run the animation
 R = z2R_all(z,p);                           % get the coordinates of the points to animate
 C = [1 2; 2 5; 3 4; 4 4+num_sps];
+num_sps = 8; %ugg, for now you have to enter this.  eventually grab from size(R)
 for i=1:num_sps-1
     C = [C; 4+i 5+i]; %chain together spine
 end

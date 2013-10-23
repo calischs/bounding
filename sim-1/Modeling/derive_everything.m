@@ -23,38 +23,39 @@ name = 'bounding';
 % Define variables for time, generalized coordinates + derivatives, controls, and parameters 
 % the robot has internal configuration variables a1,a2,phi
 % as well as rigid body motion variables x,y,th
-syms    t ...               %time
-        x dx ddx ...        %horizontal position of back foot
-        y dy ddy ...        %height of back foot
-        th dth ddth ...     %body pitch angle
-        a1 da1 dda1 ...     %back leg angle
-        a2 da2 dda2 ...     %front leg angle
-        phi dphi ddphi ...  %phi is spine motor angle
-        psi dpsi ...        %psi = (mtd/sep)*phi is spine bend angle, defined only for convenience...
-        tau1 tau2 tau3 ...  %control torques at back leg, front leg, and spine
-        Fx1 Fy1 Fx2 Fy2 ... %constraint forces for back foot and front foot
-        ma1 ma2 ...         %mounting angles of back and front legs (0 -> perpendicular, + rotates ccw) 
-        l ... %leg segment lengths
-        c11 c12 c21 c22... %leg segment COM positions
-        m11 m12 m21 m22 ... %leg segment masses
-        I11 I12 I21 I22 ... %leg segment MOIs
-        ls cs kappa ms sep mtd... %spine length, center of mass (along), spine spring constant, mass, tendon sep, motor takeup diam
-        mmh g num_sps real           %motor mass (one at hip, one at shoulder), gravity, type
+syms    t real                  %time
+syms    x dx ddx real           %horizontal position of back foot
+syms    y dy ddy real           %height of back foot
+syms    th dth ddth real        %body pitch angle
+syms    a1 da1 dda1 real        %back leg angle
+syms    a2 da2 dda2 real        %front leg angle
+syms    phi dphi ddphi real     %phi is spine motor angle
+syms    psi dpsi real           %psi = (mtd/sep)*phi is spine bend angle, defined only for convenience...
+syms    tau1 tau2 tau3 real     %control torques at back leg, front leg, and spine
+syms    FX1 FY1 FX2 FY2 real    %constraint forces for back foot and front foot
+syms    ma1 ma2 real            %mounting angles of back and front legs (0 -> perpendicular, + rotates ccw) 
+syms    ll real                 %leg segment length
+syms    c11 c12 c21 c22 real    %leg segment COM positions
+syms    m11 m12 m21 m22 real    %leg segment masses
+syms    I11 I12 I21 I22 real    %leg segment MOIs
+syms    slength kappa ms sep mtd ma1 ma2 real %spine length, center of mass (along), spine spring constant, mass, tendon sep, motor takeup diam, mounting angles 1 and 2
+syms    mmh g real      %motor mass (one at hip, one at shoulder), gravity, type
 
-% I'm still not sure how to deal with indeterminant configurations (e.g.,
-% when both feet are on the ground).  This possibility explains the
-% difference in numbers of generalized coordinates (6) and generalized
-% forces (7).  I hope that when writing the rest of the simulator this
-% confusion clears up.
+% There are a different number of generalized coordinates (6) and
+% generalized forces (7).  But, in each of the phases (flight, rear
+% contact, front contact, and both contact), ...
 
 q   = [x; y; th; a1; a2; phi];      % generalized coordinates
 dq  = [dx; dy; dth; da1; da2; dphi];    % first time derivatives
 ddq = [ddx; ddy; ddth; dda1; dda2; ddphi];  % second time derivatives
 u   = [tau1; tau2; tau3];  % control forces and moments
-c   = [Fx1; Fy1; Fx2; Fy2];           % constraint forces and moments
-p   = [ l; c; m; I; ...
-        ls; cs; kappa; ms; sep; mtd; ...
-        mmh; g; num_sps];  % parameters
+c   = [FX1; FY1; FX2; FY2]; % constraint forces and moments
+p   = [ ll; ...
+        c11; c12; c21; c22; ...       
+        m11; m12; m21; m22; ...
+        I11; I12; I21; I22; ...
+        slength; kappa; ms; sep; mtd; ma1; ma2; ...
+        mmh; g];  % parameters
 
 %%% Calculate important vectors and their time derivatives.
 
@@ -63,8 +64,8 @@ ihat = [1; 0; 0];
 jhat = [0; 1; 0];
 khat = cross(ihat,jhat);
 
-rotated_coordinates = @(a) [cos(a)*ihat + sin(a)*jhat, ...
-                            -sin(a)*ihat + cos(a)*jhat];
+rotated_i = @(a) cos(a)*ihat + sin(a)*jhat;
+rotated_j = @(a) -sin(a)*ihat + cos(a)*jhat;
 
 psi = (mtd/sep)*phi; %transform between motor angle (gen coord) and subtended spine angle (useful)
 dpsi = (mtd/sep)*dphi;
@@ -73,40 +74,44 @@ dpsi = (mtd/sep)*dphi;
 %1:rear, 2:front
 %s:end effector to mid joint (knee/elbow)
 %r:mid joint to motor
-[i1hat,j1hat] = rotated_coordinates(th);      %coordinate system of rear
-[~,rj1hat] = rotated_coordinates(th+ma1+a1);   %pointing knee to hip in j
-[~,sj1hat] = rotated_coordinates(th+ma1-a1);   %pointing foot to knee in j
+i1hat = rotated_i(th);      %coordinate system of rear
+j1hat = rotated_j(th);      %coordinate system of rear
+rj1hat = rotated_j(th+ma1+a1);   %pointing knee to hip in j
+sj1hat = rotated_j(th+ma1-a1);   %pointing foot to knee in j
+rj2hat = rotated_j(th+psi+ma2+a2);  %pointing elbow to shoulder in j
+sj2hat = rotated_j(th+psi+ma2-a2);  %pointing front foot to elbow in j
+
+
+%[i1hat,j1hat] = rotated_coordinates(th);      %coordinate system of rear
+%[~,rj1hat] = rotated_coordinates(th+ma1+a1);   %pointing knee to hip in j
+%[~,sj1hat] = rotated_coordinates(th+ma1-a1);   %pointing foot to knee in j
 
 %[i2hat,j2hat] = rotated_coordinates(th+psi);  %coordinate system of front
-[~,rj2hat] = rotated_coordinates(th+psi+ma2+a2);  %pointing elbow to shoulder in j
-[~,sj2hat] = rotated_coordinates(th+psi+ma2-a2);  %pointing front foot to elbow in j
+%[~,rj2hat] = rotated_coordinates(th+psi+ma2+a2);  %pointing elbow to shoulder in j
+%[~,sj2hat] = rotated_coordinates(th+psi+ma2-a2);  %pointing front foot to elbow in j
 
 ddt = @(r) jacobian(r,[q;dq])*[dq;ddq]; 
 
 % Define vectors 
 f1 = x*ihat + y*jhat;   %origin to rear foot
-m1 = f1 + l*sj1hat;     %origin to rear mid joint (knee)
-h1 = m1 + l*rj1hat;     %origin to rear hip
-
-%return point along spine arc given by paremter t in [0,1]
-%spine_points = @(t) i1hat * (ls/psi) * sin(t*psi) + j1hat * (ls/psi) * (1-cos(t*psi));
-%this is unsafe due to zero division, and ternary expressions don't play
-%with anonymous functions in matlab...
+m1 = f1 + ll*sj1hat;     %origin to rear mid joint (knee)
+h1 = m1 + ll*rj1hat;     %origin to rear hip
 
 %this is clunky but it should work...
+num_sps = 8;
 spine_points = [h1]; %this array will keep track of our discretization of the arc.
 vertebra = [h1 + .5*sep*j1hat, h1 - .5*sep*j1hat]; %this array will keep track of points for drawing vertebra.
 for i=1:num_sps-1
     ang = i*psi/(num_sps-1);
-    new_p = spine_points(end) + (ls/num_sps)*(cos(ang)*i1hat + sin(ang)*j1hat);
-    vertebra_vect = .5*sep*( -sin(ang)*i1hat + cos(ang)*j1hat;
+    new_p = spine_points(end) + (slength/num_sps)*(cos(ang)*i1hat + sin(ang)*j1hat);
+    vertebra_vect = .5*sep*( -sin(ang)*i1hat + cos(ang)*j1hat);
     spine_points = [spine_points new_p];
     vertebra = [vertebra new_p+vertebra_vect new_p-vertebra_vect];
 end
 
 h2 = spine_points(end); %front hip
-m2 = h2 - l*rj2hat; %front mid
-f2 = m2 - l*sj2hat; %front foot
+m2 = h2 - ll*rj2hat; %front mid
+f2 = m2 - ll*sj2hat; %front foot
 
 %centers of masses
 %rear shin, rear thigh, front shin, front thigh, spine
@@ -117,8 +122,12 @@ rcm22 = m2 + c22*rj2hat;
 rm1 = h1; %motors
 rm2 = h2;
 
-rcms = sum(spine_points,2)/n; %let's assume the spine consists of point masses at each spine point
-Is = ms*sum( dot(spine_points-rcms, spine_points-rcms) ); %moment of inertia of spine relative to COM
+rcms = sum(spine_points,2)/num_sps; %let's assume the spine consists of point masses at each spine point
+Is = 0;
+for i=1:length(spine_points)
+    Is = Is + dot( spine_points(i) - rcms , spine_points(i) - rcms );
+end
+Is = ms*Is; %moment of inertia of spine relative to COM
 
 % Take time derivatives of vectors as required for kinetic energy terms.
 drcm11 = ddt(rcm11);
@@ -162,28 +171,31 @@ V = g*( m11*dot(rcm11, jhat) + ...
     (1/2)*kappa*psi^2;
 
 % Define contributions to generalized forces.
-QFx1 = F2Q(Fx1*ihat,f1);
-QFy1 = F2Q(Fy1*jhat,f1);
-QFx2 = F2Q(Fx2*ihat,f2);
-QFy2 = F2Q(Fy2*jhat,f2);
+QFX1 = F2Q(FX1*ihat,f1);
+QFY1 = F2Q(FY1*jhat,f1);
+QFX2 = F2Q(FX2*ihat,f2);
+QFY2 = F2Q(FY2*jhat,f2);
 Qtau1 = M2Q(-tau1*khat, -da1*khat);
 Qtau2 = M2Q(-tau2*khat, -da2*khat);
 Qtau3 = M2Q(-tau3*khat, -dphi*khat); %not sure about this one.
 
 % Sum generalized force contributions.
-Q = QFx1+QFy1+QFx2+QFy2 + Qtau1+Qtau2+Qtau3;
+Q = QFX1+QFY1+QFX2+QFY2 + Qtau1+Qtau2+Qtau3;
 
 % Assemble R, the array of cartesian coordinates of the points to be animated.
 % 1:2 leaves out z coordinate
 %R = [f1(1:2); m1(1:2); h1(1:2); f2(1:2); m2(1:2); h2(1:2); spine_points(1:2,:); vertebra(1:2,:)];
-R = [f1(1:2); m1(1:2); f2(1:2); m2(1:2); spine_points(1:2,:); vertebra(1:2,:)]; %including hip/shoulder explicitly is redundant..
+R = [f1(1:2); m1(1:2); f2(1:2); m2(1:2)];
+R = [R; reshape(spine_points(1:2,:),[],1); reshape(vertebra(1:2,:),[],1)]; %including hip/shoulder explicitly is redundant..
 %maybe eventually we should model a first and last segment w specified lengths
 
 % Calculate rcm, the location of the center of mass
-rcm = (m11*rcm11 + m12*rcm12 + m21*rcm21 + m22*rcm22 + mh*h1 + mh+h2 + ms*rcms)/(m11+m12+m21+m22+mh+mh+ms);
+rcm = (m11*rcm11 + m12*rcm12 + m21*rcm21 + m22*rcm22 + mmh*h1 + mmh+h2 + ms*rcms)/(m11+m12+m21+m22+mmh+mmh+ms);
 
 % Assemble C, the set of constraints
 C = [y; f2(2)]; %feet on ground
+%we probably need to enforce x position constraints... how do we calculate
+%that?
 
 %% All the work is done!  Just turn the crank...
 %%% Derive Energy Function and Equations of Motion
