@@ -17,12 +17,31 @@ while(t0 < tend && ~done)   % could raise flag "done" to stop integration before
     t0 = sol.x(end);                        % reset the integration initial time
      
     if isfield(sol,'ie') && ~isempty(sol.ie)
-        z0 = dynamics_discrete(sol.ye(:,end),p,sol.ie(end));   % run the discrete dynamics function
-        if any(sol.ie == 1)                         % if event 1 occured during integration
-            iphase = 2;                             % phase is now phase 2
-        elseif any(sol.ie == 2)                     % if event 2 occured during integration
-            iphase = 1;                             % phase is now phase 1
-        end
+        z0 = dynamics_discrete(sol.ye(:,end),p,sol.ie(end),iphase);   % run the discrete dynamics function
+        switch iphase
+            case 1 %flight
+                if any(sol.ie == 1) %rear touchdown
+                    iphase = 2; %change to rear contact
+                elseif any(sol.ie == 2) %front touchdown
+                    iphase = 3; %change to front contact
+                end
+            case 2 %rear contact only
+                if any(sol.ie == 3) %rear takeoff
+                    iphase = 1; %change to flight
+                elseif any(sol.ie == 2) %front touchdown
+                    iphase = 4; %change to both contact
+                end
+            case 3 %front contact only
+                if any(sol.ie == 1) %rear touchdown
+                    iphase = 4; %both contact
+                elseif any(sol.ie == 4) %front takeoff
+                    iphase = 1; %flight
+                end
+            case 4 %both contact
+                if any(sol.ie == 3) %rear takeoff
+                    iphase = 3; %front contact only
+                elseif any(sol.ie == 4) %front takeoff
+                    iphase = 2; %rear contact only
     else
         sol.ie = []; sol.xe = []; sol.ye = [];      % leave this just in case no event occured
     end

@@ -41,8 +41,4 @@ x = A\b; % solve system for accelerations (and possibly contact forces)
 dz(1:2:12,1) = z(2:2:12,1);   % set speeds from state
 dz(2:2:12,1) = x(1:6);         % set accelerations from solution
 
-%tau1 = u(1);
-%tau2 = u(2);
-%tau3 = u(3);
-%dz(5) = tau^2; %need to think more about this.
 end
