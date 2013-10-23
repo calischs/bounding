@@ -1,6 +1,27 @@
 function zplus = dynamics_discrete(zm,p,ie)
+%event 1 is rear touchdown
+%event 2 is front touchdown
+%event 3 is rear takeoff
+%event 4 is front takeoffs
 A = A_all(zm,p);                            % evaluate A matrix
 bi = bi_all(zm,p);                          % evaluate impact b vector (bhat)
+
+switch ie
+    case 1
+        % rear touchdown
+        ;
+    case 2
+        % front touchdown
+        ;
+    case 3
+        % rear takeoff
+        ;
+    case 4
+        % front takeoff
+        ;
+    otherwise
+        %problem
+        assert(false);
 
 if ie == 2              % if the second event (touchdown) occured
     %must satisfy constraints so keep everything.

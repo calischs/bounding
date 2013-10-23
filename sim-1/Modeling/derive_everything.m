@@ -24,8 +24,8 @@ name = 'bounding';
 % the robot has internal configuration variables a1,a2,phi
 % as well as rigid body motion variables x,y,th
 syms    t ...               %time
-        y dy ddy ...        %height of back foot
         x dx ddx ...        %horizontal position of back foot
+        y dy ddy ...        %height of back foot
         th dth ddth ...     %body pitch angle
         a1 da1 dda1 ...     %back leg angle
         a2 da2 dda2 ...     %front leg angle
