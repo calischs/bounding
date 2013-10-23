@@ -9,25 +9,25 @@ clear
 % http://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html
 setpath                                     % add AutoDerived, Modeling, and Visualization folders to Matlab path
 
-p = parameters();                           % get parameters from file
-z0 = [0; 0; pi/6; 0];                       % set initial state
-tspan = [0 2.];                              % set time span
+p = parameters();                               % get parameters from file
+num_sps = p(end);
+%initial: [x dx y dy th dth a1 da1 a2 da2 phi dphi]
+z0 =      [0  0 0  0  0   0  0   0  0   0   0    0]; 
+tspan = [0 2.];                                 % set time span
 
-x0 = [.45, .02];
-f = @(x) residual(x); 
-x = fsolve(f,x0);
-disp(x);
-
-tspan(2) = x(1);
-p(4) = x(2);
-p(5) = x(2);
 %now run the simulation with the calculated values
 
 [t z u indices] = hybrid_simulation(z0,p,tspan); % run simulation
 
 % Run the animation
 R = z2R_all(z,p);                           % get the coordinates of the points to animate
-C = [1 2; 2 3];                             % connect points 1 to 2, 2 to 3 with lines
+C = [1 2; 2 5; 3 4; 4 4+num_sps];
+for i=1:num_sps-1
+    C = [C; 4+i 5+i]; %chain together spine
+end
+for i=1:num_sps-2
+    C = [C; 4+i 4+num_sps+2*i-1; 4+i 4+num_sps+2*i]; %make vertebra
+end
 speed = .25;                                 % set animation speed
 cla                                         % clear axes
 animate_simple(t,R,C,speed)                 % run animation

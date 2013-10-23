@@ -8,5 +8,6 @@ function p = parameters()
  c1 = l/2;          % even mass distribution
  c2 = l/2;
  g = 9.81;          % earth gravity
- p = [l; c1; c2; m1; m2; mh; I1; I2; g];
+ num_sps = 8;       %number of spine points, including hip and shoulder
+ p = [l; c1; c2; m1; m2; mh; I1; I2; g; num_sps];
 end

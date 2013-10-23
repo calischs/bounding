@@ -39,7 +39,7 @@ syms    t ...               %time
         m11 m12 m21 m22 ... %leg segment masses
         I11 I12 I21 I22 ... %leg segment MOIs
         ls cs kappa ms sep mtd... %spine length, center of mass (along), spine spring constant, mass, tendon sep, motor takeup diam
-        mmh g real           %motor mass (one at hip, one at shoulder), gravity, type
+        mmh g num_sps real           %motor mass (one at hip, one at shoulder), gravity, type
 
 % I'm still not sure how to deal with indeterminant configurations (e.g.,
 % when both feet are on the ground).  This possibility explains the
@@ -54,7 +54,7 @@ u   = [tau1; tau2; tau3];  % control forces and moments
 c   = [Fx1; Fy1; Fx2; Fy2];           % constraint forces and moments
 p   = [ l; c; m; I; ...
         ls; cs; kappa; ms; sep; mtd; ...
-        mmh; g];  % parameters
+        mmh; g; num_sps];  % parameters
 
 %%% Calculate important vectors and their time derivatives.
 
@@ -94,15 +94,14 @@ h1 = m1 + l*rj1hat;     %origin to rear hip
 %with anonymous functions in matlab...
 
 %this is clunky but it should work...
-num_sps = 8; %number of spine points, including hip and shoulder
 spine_points = [h1]; %this array will keep track of our discretization of the arc.
 vertebra = [h1 + .5*sep*j1hat, h1 - .5*sep*j1hat]; %this array will keep track of points for drawing vertebra.
-for i=1:n-1
+for i=1:num_sps-1
     ang = i*psi/(num_sps-1);
     new_p = spine_points(end) + (ls/num_sps)*(cos(ang)*i1hat + sin(ang)*j1hat);
     vertebra_vect = .5*sep*( -sin(ang)*i1hat + cos(ang)*j1hat;
-    append(spine_points,new_p);
-    append(vertebra, new_p+vertebra_vect, new_p-vertebra_vect);
+    spine_points = [spine_points new_p];
+    vertebra = [vertebra new_p+vertebra_vect new_p-vertebra_vect];
 end
 
 h2 = spine_points(end); %front hip
@@ -169,13 +168,17 @@ QFx2 = F2Q(Fx2*ihat,f2);
 QFy2 = F2Q(Fy2*jhat,f2);
 Qtau1 = M2Q(-tau1*khat, -da1*khat);
 Qtau2 = M2Q(-tau2*khat, -da2*khat);
-Qtau3 = M2Q(-tau3*khat, -dpsi*khat); %not sure about this one.
+Qtau3 = M2Q(-tau3*khat, -dphi*khat); %not sure about this one.
 
 % Sum generalized force contributions.
 Q = QFx1+QFy1+QFx2+QFy2 + Qtau1+Qtau2+Qtau3;
 
 % Assemble R, the array of cartesian coordinates of the points to be animated.
-R = [f1(1:2); m1(1:2); h1(1:2); f2(1:2); m2(1:2); h2(1:2); spine_points; vertebra]; %not sure on dimensions of this array yet
+% 1:2 leaves out z coordinate
+%R = [f1(1:2); m1(1:2); h1(1:2); f2(1:2); m2(1:2); h2(1:2); spine_points(1:2,:); vertebra(1:2,:)];
+R = [f1(1:2); m1(1:2); f2(1:2); m2(1:2); spine_points(1:2,:); vertebra(1:2,:)]; %including hip/shoulder explicitly is redundant..
+%maybe eventually we should model a first and last segment w specified
+%lengths
 
 % Calculate rcm, the location of the center of mass
 rcm = (m11*rcm11 + m12*rcm12 + m21*rcm21 + m22*rcm22 + mh*h1 + mh+h2 + ms*rcms)/(m11+m12+m21+m22+mh+mh+ms);
