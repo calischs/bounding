@@ -7,8 +7,8 @@ function dz = dynamics_continuous(t,z,p,iphase)
 % 4: both feet in contact
 
 u = control_laws(t,z,p,iphase); % get the control
-A = A_all(z,p);                 % get the full A matrix
-b = b_all(z,u,p);               % get the full b vector
+A = A_bounding(z,p);                 % get the full A matrix
+b = b_bounding(z,u,p);               % get the full b vector
 
 % evaluate dz based on t, z p, and iphase
 switch iphase

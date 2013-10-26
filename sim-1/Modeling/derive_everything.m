@@ -39,6 +39,7 @@ syms    c11 c12 c21 c22 real    %leg segment COM positions
 syms    m11 m12 m21 m22 real    %leg segment masses
 syms    I11 I12 I21 I22 real    %leg segment MOIs
 syms    slength kappa ms sep mtd ma1 ma2 real %spine length, center of mass (along), spine spring constant, mass, tendon sep, motor takeup diam, mounting angles 1 and 2
+%syms    last_step_1 last_step_2 real %last planted x positions of the feet.
 syms    mmh g real      %motor mass (one at hip, one at shoulder), gravity, type
 
 % There are a different number of generalized coordinates (6) and
@@ -56,7 +57,7 @@ p   = [ ll; ...
         I11; I12; I21; I22; ...
         slength; kappa; ms; sep; mtd; ma1; ma2; ...
         mmh; g];  % parameters
-
+%last_steps = [last_step_1, last_step_2];
 %%% Calculate important vectors and their time derivatives.
 
 % Define fundamental unit vectors.
@@ -81,15 +82,6 @@ sj1hat = rotated_j(th+ma1-a1);   %pointing foot to knee in j
 rj2hat = rotated_j(th+psi+ma2+a2);  %pointing elbow to shoulder in j
 sj2hat = rotated_j(th+psi+ma2-a2);  %pointing front foot to elbow in j
 
-
-%[i1hat,j1hat] = rotated_coordinates(th);      %coordinate system of rear
-%[~,rj1hat] = rotated_coordinates(th+ma1+a1);   %pointing knee to hip in j
-%[~,sj1hat] = rotated_coordinates(th+ma1-a1);   %pointing foot to knee in j
-
-%[i2hat,j2hat] = rotated_coordinates(th+psi);  %coordinate system of front
-%[~,rj2hat] = rotated_coordinates(th+psi+ma2+a2);  %pointing elbow to shoulder in j
-%[~,sj2hat] = rotated_coordinates(th+psi+ma2-a2);  %pointing front foot to elbow in j
-
 ddt = @(r) jacobian(r,[q;dq])*[dq;ddq]; 
 
 % Define vectors 
@@ -98,18 +90,19 @@ m1 = f1 + ll*sj1hat;     %origin to rear mid joint (knee)
 h1 = m1 + ll*rj1hat;     %origin to rear hip
 
 %this is clunky but it should work...
-num_sps = 8;
+num_sps = 6.;
 spine_points = [h1]; %this array will keep track of our discretization of the arc.
 vertebra = [h1 + .5*sep*j1hat, h1 - .5*sep*j1hat]; %this array will keep track of points for drawing vertebra.
+dl = (slength/num_sps);
 for i=1:num_sps-1
     ang = i*psi/(num_sps-1);
-    new_p = spine_points(end) + (slength/num_sps)*(cos(ang)*i1hat + sin(ang)*j1hat);
-    vertebra_vect = .5*sep*( -sin(ang)*i1hat + cos(ang)*j1hat);
+    new_p = spine_points(:,end) + dl*rotated_i(th+ang);
+    vertebra_vect = .5*sep*rotated_j(th+ang);
     spine_points = [spine_points new_p];
     vertebra = [vertebra new_p+vertebra_vect new_p-vertebra_vect];
 end
 
-h2 = spine_points(end); %front hip
+h2 = spine_points(:,end); %front hip
 m2 = h2 - ll*rj2hat; %front mid
 f2 = m2 - ll*sj2hat; %front foot
 
@@ -177,15 +170,15 @@ QFX2 = F2Q(FX2*ihat,f2);
 QFY2 = F2Q(FY2*jhat,f2);
 Qtau1 = M2Q(-tau1*khat, -da1*khat);
 Qtau2 = M2Q(-tau2*khat, -da2*khat);
-Qtau3 = M2Q(-tau3*khat, -dphi*khat); %not sure about this one.
+Qtau3 = M2Q(-tau3*khat, -dphi*khat); 
 
 % Sum generalized force contributions.
 Q = QFX1+QFY1+QFX2+QFY2 + Qtau1+Qtau2+Qtau3;
 
 % Assemble R, the array of cartesian coordinates of the points to be animated.
 % 1:2 leaves out z coordinate
-%R = [f1(1:2); m1(1:2); h1(1:2); f2(1:2); m2(1:2); h2(1:2); spine_points(1:2,:); vertebra(1:2,:)];
 R = [f1(1:2); m1(1:2); f2(1:2); m2(1:2)];
+%R = [R; reshape(spine_points(1:2,:),[],1)]; %including hip/shoulder explicitly is redundant..
 R = [R; reshape(spine_points(1:2,:),[],1); reshape(vertebra(1:2,:),[],1)]; %including hip/shoulder explicitly is redundant..
 %maybe eventually we should model a first and last segment w specified lengths
 
@@ -193,9 +186,7 @@ R = [R; reshape(spine_points(1:2,:),[],1); reshape(vertebra(1:2,:),[],1)]; %incl
 rcm = (m11*rcm11 + m12*rcm12 + m21*rcm21 + m22*rcm22 + mmh*h1 + mmh+h2 + ms*rcms)/(m11+m12+m21+m22+mmh+mmh+ms);
 
 % Assemble C, the set of constraints
-C = [y; f2(2)]; %feet on ground
-%we probably need to enforce x position constraints... how do we calculate
-%that?
+C = [x; y; f2(1); f2(2)]; %Note: since we enforce acceleration, not position, we don't need to save the step positions.
 
 %% All the work is done!  Just turn the crank...
 %%% Derive Energy Function and Equations of Motion
@@ -214,7 +205,7 @@ x = [ddq; c];   % we want to solve for both the second time derivates of the gen
 
 %%% Rearrange Equations of Motion. 
 A = jacobian(g,x);
-b = A*x - g;
+b = simplify(A*x - g); %without simplify, this doesn't clear FX2 and FY2 from the expression and throws error later.
 bi = [jacobian(gd,ddq)*dq; zeros(size(c))];
 % A\b yields the second time derivatives of the generalized coordinates and 
 % the constraint forces for continuous dynamics.
@@ -230,20 +221,27 @@ z(2:2:end,1) = dq; % the even elements of state z are the first time derivatives
 % Write functions to a separate folder because we don't usually have to see them
 directory = '../AutoDerived/';
 % Write a function to evaluate the energy of the system given the current state and parameters
-matlabFunction(E,'file',[directory 'energy_' name],'vars',{z p});
-% Write a function to evaluate the A matrix of the system given the current state and parameters
+%matlabFunction(E,'file',[directory 'energy_' name],'vars',{z p});
+% Write a function to evaluate the A matrix of the system given the current
+% state, parameters, and last steps taken
+%matlabFunction(A,'file',[directory 'A_' name],'vars',{z p last_steps});
+disp('Writing A function');
 matlabFunction(A,'file',[directory 'A_' name],'vars',{z p});
 % Write a function to evaluate the b vector of the system given the current state, current control, and parameters
+disp('Writing b function');
 matlabFunction(b,'file',[directory 'b_' name],'vars',{z u p});
 % Write a function to evaluate the bi vector of the system given the state before impact and parameters
+disp('Writing bi function');
 matlabFunction(bi,'file',[directory 'bi_' name], 'vars',{z p});
 
 % The files generated below may need to be edited due to a
 % matlabFunction bug that does not properly vectorize code when symbolic
 % constants are written to a function file.
 % Write a function to evaluate the X and Y coordinates of the points to be animated given the current state and parameters
+disp('Writing R function');
 matlabFunction(R,'file',[directory 'z2R_' name],'vars',{z p});
 % Write a function to evaluate the X and Y coordinates and speeds of the center of mass given the current state and parameters
+disp('Writing COM function');
 drcm = ddt(rcm);             % Calculate center of mass velocity vector
 COM = [rcm(1:2); drcm(1:2)]; % Concatenate x and y coordinates and speeds of center of mass in array
-matlabFunction(COM,'file',[directory 'COM_' name],'vars',{z p});
+%matlabFunction(COM,'file',[directory 'COM_' name],'vars',{z p});

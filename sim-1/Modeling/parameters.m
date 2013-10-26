@@ -5,16 +5,16 @@ function p = parameters()
  m21 = .4*l;
  m22 = .4*l;
  mh = .1;           % assume motor ~half weight of ours
- I11 = m1*l^2/12;    % even mass distribution
- I12 = m2*l^2/12;
- I21 = m2*l^2/12;
- I22 = m2*l^2/12;
+ I11 = m11*l^2/12;    % even mass distribution
+ I12 = m12*l^2/12;
+ I21 = m21*l^2/12;
+ I22 = m22*l^2/12;
  c11 = l/2;          % even mass distribution
  c12 = l/2;          % even mass distribution
  c21 = l/2;
  c22 = l/2;
  ls = .5;       %spine length
- kappa = .1;    %spine torsion stiffness constant
+ kappa = 0*.1;    %spine torsion stiffness constant
  ms = .4*ls;    %spine mass
  sep = .1;      %separation of tendons
  mtd = .05;     %motor takeup diameter
@@ -26,6 +26,6 @@ function p = parameters()
      c11; c12; c21; c22;...
      m11; m12; m21; m22;...
      I11; I12; I21; I22;...
-     ls; kappa; ms; sep; mtd; ma1; ma2...
+     ls; kappa; ms; sep; mtd; ma1; ma2;...
      mh; g; num_sps];
 end

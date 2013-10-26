@@ -1,9 +1,9 @@
-function [tout zout uout indices] = hybrid_simulation(z0,p,tspan)
+function [tout zout uout indices] = hybrid_simulation(z0,p,tspan,iphase0)
 t0 = tspan(1); tend = tspan(end);   % set initial and final times
 
 %% Setup tolerance Options
 inttol = 1e-6;  % set integration tolerances
-iphase = 1;     % phase number is currently phase 1
+iphase = iphase0;     
 sols = [];      % initialize array of solution structures
 done = false;   % "done" flag is false (not raised)
 
@@ -11,29 +11,34 @@ while(t0 < tend && ~done)   % could raise flag "done" to stop integration before
     
     % now we need to include the number of the phase in the call to the event function
     opts = odeset('Events', @(t,z) event_conditions(t,z,p,iphase), 'abstol',inttol,'reltol',inttol);
-    f = @(t,z) dynamics_continuous(t, z, p, iphase);    % we also include the number of the phase in the call to the EoM function
+    f = @(t,z) dynamics_continuous(t, z, p, iphase);
     sol = ode45(f, [t0 tend], z0, opts);    % integate until an event happens or time runs out
     sol.iphase = iphase;                    % store the phase number in the solution structure
     t0 = sol.x(end);                        % reset the integration initial time
      
     if isfield(sol,'ie') && ~isempty(sol.ie)
         z0 = dynamics_discrete(sol.ye(:,end),p,sol.ie(end),iphase);   % run the discrete dynamics function
+        R = z2R_bounding(z0,p);
         switch iphase
             case 1 %flight
                 if any(sol.ie == 1) %rear touchdown
                     iphase = 2; %change to rear contact
+                    %last_steps(1) = R(1);
                 elseif any(sol.ie == 2) %front touchdown
                     iphase = 3; %change to front contact
+                    %last_steps(2) = R(5);
                 end
             case 2 %rear contact only
                 if any(sol.ie == 3) %rear takeoff
                     iphase = 1; %change to flight
                 elseif any(sol.ie == 2) %front touchdown
                     iphase = 4; %change to both contact
+                    %last_steps(2) = R(5);
                 end
             case 3 %front contact only
                 if any(sol.ie == 1) %rear touchdown
                     iphase = 4; %both contact
+                    %last_steps(1) = R(1);
                 elseif any(sol.ie == 4) %front takeoff
                     iphase = 1; %flight
                 end
@@ -42,6 +47,11 @@ while(t0 < tend && ~done)   % could raise flag "done" to stop integration before
                     iphase = 3; %front contact only
                 elseif any(sol.ie == 4) %front takeoff
                     iphase = 2; %rear contact only
+                end
+            otherwise
+                %shouldn't be here
+                assert(false);
+        end
     else
         sol.ie = []; sol.xe = []; sol.ye = [];      % leave this just in case no event occured
     end
