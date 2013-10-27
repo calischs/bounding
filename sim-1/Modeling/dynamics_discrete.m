@@ -23,14 +23,14 @@ switch iphase
     case 2
         % rear contact
         if ie==3 %rear takeoff
-            i = [1,2,3,4,5,6]; %we care about x,y,th,a1,a2,phi,fx1,fy1
+            i = [1,2,3,4,5,6]; %we care about x,y,th,a1,a2,phi
         elseif ie==2 %front touchdown
-            i = [1,2,3,4,5,6,7,8,10]; %we care about x,y,th,a1,a2,phi,fx1,fy1,fy2
+            i = [1,2,3,4,5,6,7,8,9,10]; %we care about x,y,th,a1,a2,phi,fx1,fy1,fy2
         end
     case 3
         % front contact
         if ie==1 %rear touchdown
-            i = [1,2,3,4,5,6,7,8,10]; %x,y,th,a1,a2,phi,fx1,fy1,fy2
+            i = [1,2,3,4,5,6,7,8,9,10]; %x,y,th,a1,a2,phi,fx1,fy1,fy2
         elseif ie==4 %front takeoff
             i = [1,2,3,4,5,6]; %x,y,th,a1,a2,phi
         end

@@ -28,9 +28,9 @@ switch iphase
         b = b(i);
     case 4
         %both contact
-        i = [1,2,3,4,5,6,7,8,10];
-        A = A(i,i); %care about x, y, th, a1, a2, phi, fx1, fy1, fy2 (leave out one contact force to avoid overconstraint...)
-        b = b(i);
+        %i = [1,2,3,4,5,6,7,8,9,10];
+        %A = A(i,i); %care about x, y, th, a1, a2, phi, fx1, fy1, fx2, fy2
+        %b = b(i);
     otherwise
         %something wrong
         assert(false);

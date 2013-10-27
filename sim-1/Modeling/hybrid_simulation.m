@@ -15,7 +15,8 @@ while(t0 < tend && ~done)   % could raise flag "done" to stop integration before
     sol = ode45(f, [t0 tend], z0, opts);    % integate until an event happens or time runs out
     sol.iphase = iphase;                    % store the phase number in the solution structure
     t0 = sol.x(end);                        % reset the integration initial time
-     
+    disp(iphase);
+    
     if isfield(sol,'ie') && ~isempty(sol.ie)
         z0 = dynamics_discrete(sol.ye(:,end),p,sol.ie(end),iphase);   % run the discrete dynamics function
         R = z2R_bounding(z0,p);
@@ -23,22 +24,18 @@ while(t0 < tend && ~done)   % could raise flag "done" to stop integration before
             case 1 %flight
                 if any(sol.ie == 1) %rear touchdown
                     iphase = 2; %change to rear contact
-                    %last_steps(1) = R(1);
                 elseif any(sol.ie == 2) %front touchdown
                     iphase = 3; %change to front contact
-                    %last_steps(2) = R(5);
                 end
             case 2 %rear contact only
                 if any(sol.ie == 3) %rear takeoff
                     iphase = 1; %change to flight
                 elseif any(sol.ie == 2) %front touchdown
                     iphase = 4; %change to both contact
-                    %last_steps(2) = R(5);
                 end
             case 3 %front contact only
                 if any(sol.ie == 1) %rear touchdown
                     iphase = 4; %both contact
-                    %last_steps(1) = R(1);
                 elseif any(sol.ie == 4) %front takeoff
                     iphase = 1; %flight
                 end
