@@ -15,7 +15,10 @@ while(t0 < tend && ~done)   % could raise flag "done" to stop integration before
     sol = ode45(f, [t0 tend], z0, opts);    % integate until an event happens or time runs out
     sol.iphase = iphase;                    % store the phase number in the solution structure
     t0 = sol.x(end);                        % reset the integration initial time
-    disp(iphase);
+    disp(sprintf('Phase: %d',iphase));
+    disp(sprintf('phi end: %f',sol.y(11,end)));
+    disp(sprintf('a1 end: %f',sol.y(7,end)));
+    disp(sprintf('a2 end: %f',sol.y(9,end)));
     
     if isfield(sol,'ie') && ~isempty(sol.ie)
         z0 = dynamics_discrete(sol.ye(:,end),p,sol.ie(end),iphase);   % run the discrete dynamics function

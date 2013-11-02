@@ -39,7 +39,6 @@ syms    c11 c12 c21 c22 real    %leg segment COM positions
 syms    m11 m12 m21 m22 real    %leg segment masses
 syms    I11 I12 I21 I22 real    %leg segment MOIs
 syms    slength kappa ms sep mtd ma1 ma2 real %spine length, center of mass (along), spine spring constant, mass, tendon sep, motor takeup diam, mounting angles 1 and 2
-%syms    last_step_1 last_step_2 real %last planted x positions of the feet.
 syms    mmh g real      %motor mass (one at hip, one at shoulder), gravity, type
 
 % There are a different number of generalized coordinates (6) and
@@ -57,7 +56,6 @@ p   = [ ll; ...
         I11; I12; I21; I22; ...
         slength; kappa; ms; sep; mtd; ma1; ma2; ...
         mmh; g];  % parameters
-%last_steps = [last_step_1, last_step_2];
 %%% Calculate important vectors and their time derivatives.
 
 % Define fundamental unit vectors.
@@ -90,7 +88,7 @@ m1 = f1 + ll*sj1hat;     %origin to rear mid joint (knee)
 h1 = m1 + ll*rj1hat;     %origin to rear hip
 
 %this is clunky but it should work...
-num_sps = 6.;
+num_sps = 8.;
 spine_points = [h1]; %this array will keep track of our discretization of the arc.
 vertebra = [h1 + .5*sep*j1hat, h1 - .5*sep*j1hat]; %this array will keep track of points for drawing vertebra.
 dl = (slength/num_sps);

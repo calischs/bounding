@@ -34,7 +34,7 @@ switch iphase
         x = A\b;
         value(3) = x(end); %rear ground reaction force Fy1
         isterminal(3) = 1;
-        direction(3) = 1;
+        direction(3) = -1;
     case 3
         % in only front contact events 1 and 4 are possible 
         % rear touchdown (1)
@@ -46,10 +46,9 @@ switch iphase
         A = A(i,i);
         b = b(i);
         x = A\b;
-        disp(x(end));
         value(4) = x(end); %front ground reaction force Fy2
         isterminal(4) = 1;
-        direction(4) = 1;        
+        direction(4) = -1;        
     case 4
         % in both contact events 3 and 4 are possible
         i = [1,2,3,4,5,6,7,8,10]; %in both contact, we care about x, y, th, a1, a2, phi, fx1, fy1, fx2, fy2

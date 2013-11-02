@@ -1,16 +1,22 @@
+%phases:
+% 1: no feet in contact
+% 2: rear foot in contact only
+% 3: front foot in contact only
+% 4: both feet in contact
 clear
 setpath
-p = parameters();                               
+p = parameters();
+%with settings 11/2, phi = 2*psi
 %initial: [x dx y dy th dth a1 da1 a2 da2 phi dphi]
-z0 =      [0  0 0.1  0  pi/12   0  0   0  0   0   0    0]; 
-iphase0 = 1; %rear foot in contact
-%last_steps = [R(1), R(5)]; %set last steps to initial x positions of feet.
-tspan = [0 .70];                                 % set time span
+z0 =      [0  0 0  0  pi/3   0  pi/6   0  pi/6   0   -pi    0]; 
+iphase0 = 4; %rear foot in contact
+
+tspan = [0 .5];                                 % set time span
 [t z u indices] = hybrid_simulation(z0,p,tspan,iphase0); % run simulation
 
 % Run the animation
 R = z2R_bounding(z,p);                   %get the coordinates of the points to animate
-num_sps = 6;                        %ugg, for now you have to enter this.  eventually grab from size(R)
+num_sps = 8;                        %ugg, for now you have to enter this.  eventually grab from size(R)
 C = [1 2; 2 5; 3 4; 4 4+num_sps];
 for i=1:num_sps-1
     C = [C; 4+i 5+i]; %chain together spine
