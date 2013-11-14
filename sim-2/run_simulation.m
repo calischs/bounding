@@ -8,7 +8,7 @@ setpath
 p = parameters();
 %with settings 11/2, phi = 2*psi
 %initial: [x dx y dy    th   dth    a1 da1    a2 da2     phi dphi]
-z0 =      [0  0 0  0  pi/3   -1.5  pi/3   0  pi/6   0   -pi/3    0]; 
+z0 =      [0  0 0  0  pi/4   -.1  pi/3   0  pi/4   0   -pi/3    0]; 
 
 %decision variables:
 % Set these manually? th0, dth0, a10, da10, a20, da20, phi0, dphi0
@@ -26,22 +26,26 @@ z0 =      [0  0 0  0  pi/3   -1.5  pi/3   0  pi/6   0   -pi/3    0];
 % e.g., q2 = [a1d, a2d, phid]
 
 % set guess
-ctrl.tf1 = .75;
-ctrl.tf2 = 1.25;
-ctrl.tf3 = 1.55;
-ctrl.tf4 = 1.6;
-tf = 1.6;
+ctrl.tf1 = .26;
+ctrl.tf2 = .3;
+ctrl.tf3 = .5;
+ctrl.tf4 = .7;
+tf = .7;
 
-%ctrl.T1 = [-1. .2 .25   -1. .02 .125   -1. .02 .125];
-ctrl.T1 = [-1. pi/3 .2   -1. pi/6 .2   -.6 pi/6 .18];
-ctrl.q2 = [pi/3,pi/6, 2*pi];
-%ctrl.T3 = [.2 .2 -1. .2 .2 -1. .2 .2 -1.];
-ctrl.T3 = [pi/3 -.8 -1.95   pi/3 -.8 -1.   pi/6 -.2 1.];
+%ctrl.T1 = [-.38 pi/3 .2   -.8 pi/3 .1   -.6 pi/3 0];
+%ctrl.q2 = [pi/3, pi/24, .25*pi];
+%ctrl.T3 = [pi/2.5 -.95 -.04   pi/2.5 -1. -.6   pi/6 -1. -.5];
+%ctrl.q4 = [pi/6, pi/3, -pi/3];
 
+ctrl.T1 = [-.38 pi/3 .15   -.7 pi/3 .09   -.5 pi/3 .04]; %decrease early phi torque to limit forward roll
+ctrl.q2 = [pi/3, pi/24, 1.*pi];
+ctrl.T3 = [pi/2.5 -.3 .3   pi/2.5 -.5 .125   pi/2.5 -.3 0.06];
+%ctrl.T3 = [pi/2.5 -.95 -.6   pi/2.5 -1. -.6   pi/6 -1. -.5];
 ctrl.q4 = [pi/6, pi/3, -pi/3];
+
 x0 = [ctrl.tf1, ctrl.tf2, ctrl.tf3, ctrl.tf4, ctrl.T1, ctrl.T3, ctrl.q2, ctrl.q4, tf];
-lb = [      .1,       .1,       .1,       .1, -2.*ones(1,length(ctrl.T1)+length(ctrl.T3)), [0.,0.,-pi], [0.,0.,-pi], .1];
-ub = [      2.,       2.,       2.,       2., 2.*ones(1,length(ctrl.T1)+length(ctrl.T3)), [pi/2,pi/2,pi], [pi/2,pi/2,pi], 2.];
+lb = [      .1,       .1,       .1,       .1, -1.*ones(1,length(ctrl.T1)+length(ctrl.T3)), [0.,0.,-pi], [0.,0.,-pi], .1];
+ub = [      2.,       2.,       2.,       2., 1.*ones(1,length(ctrl.T1)+length(ctrl.T3)), [pi/2,pi/2,pi], [pi/2,pi/2,pi], 2.];
 
 x = x0;
 %outfunc = @(x,optimValues,state) output_bounding_sim(x,z0,p);
@@ -82,7 +86,7 @@ tspan = [0 tf];                                 % set time span
 %%
 % Run the animation
 R = z2R_bounding(z,p);                   %get the coordinates of the points to animate
-num_sps = 8;                        %ugg, for now you have to enter this.  eventually grab from size(R)
+num_sps = 8;                            %ugg, for now you have to enter this.  eventually grab from size(R)
 C = [1 2; 2 5; 3 4; 4 4+num_sps];
 for i=1:num_sps-1
     C = [C; 4+i 5+i]; %chain together spine
@@ -92,7 +96,7 @@ for i=2:num_sps-1
     C = [C; 4+i 4+num_sps+2*i-1; 4+i 4+num_sps+2*i]; %make vertebra
 end
 
-speed = .25;                                 % set animation speed
+speed = .125;                                 % set animation speed
 cla                                         % clear axes
 
 animate_simple(t,R,C,speed)                 % run animation

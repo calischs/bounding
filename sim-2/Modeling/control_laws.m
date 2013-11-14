@@ -5,9 +5,9 @@ function u = control_laws(t,z,ctrl,p,iphase)
 % 3: front foot in contact only
 % 4: both feet in contact
 
-a1_max = .2;
-a2_max = .2;
-phi_max = .2;
+a1_max = .3;
+a2_max = .3;
+phi_max = .3;
 
     function t_out = clip_torque(t_in,max_torque)
         if t_in>max_torque
