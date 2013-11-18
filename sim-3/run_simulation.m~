@@ -8,7 +8,7 @@ setpath
 p = parameters();
 %with settings 11/2, phi = 2*psi
 %initial: [x dx y dy    th   dth    a1 da1    a2 da2     phi dphi]
-z0 =      [0  0 0  -.07     0   2.5      pi/6   0  pi/3  0      0.    0]; 
+z0 =      [0  0 0  0     0   0      pi/6   0  pi/3  0      0.    0]; 
 
 
 %decision variables:
@@ -21,24 +21,22 @@ z0 =      [0  0 0  -.07     0   2.5      pi/6   0  pi/3  0      0.    0];
 %p12, 
 
 % set guess, none of these times should be equal
-ctrl.tf1 = .14;         %take off rear foot
-ctrl.tf2 = .16;         %landing front foot
-ctrl.tf3 = .32;          %take off front foot
-ctrl.tf4 = .34;          %landing rear foot
-ctrl.tf5 = .4;               %end of sim
+ctrl.tf1 = .11;         %take off rear foot
+ctrl.tf2 = .11;         %landing front foot
+ctrl.tf3 = .13;          %take off front foot
+ctrl.tf4 = .2;          %landing rear foot
+tf = .3;               %end of sim
 
             %a1       a2         phi
 ctrl.p1 =  [pi/6     pi/3        0.];       %start of simulation
-
 ctrl.p12 = [pi/6     pi/3        0.];       %halfway
-ctrl.p2 =  [0.       pi/5        0.];     %take-off of rear foot
-ctrl.p23 = [pi/3     pi/12       0.];     %halfway
-ctrl.p3 =  [pi/3     pi/6        0.];     %landing on front foot
-
-ctrl.p34 = [pi/3     pi/6        0.];     %halfway
-ctrl.p4 =  [pi/5       0.        0.];     %take-off of front foot
-ctrl.p45 = [pi/12    pi/3        0.];     %halfway
-ctrl.p5 =  [pi/6     pi/3        0.];        %landing of rear foot
+ctrl.p2 =  [0.       pi/3.       0.];     %take-off of rear foot
+ctrl.p23 = [1.5       pi/6        0.];     %halfway
+ctrl.p3 =  [1.5     pi/6        0.];     %landing on front foot
+ctrl.p34 = [1.5     pi/6        0.];     %halfway
+ctrl.p4 =  [pi/3       0.        0.];     %take-off of front foot
+ctrl.p45 = [pi/12      0.        0.];     %halfway
+ctrl.p5 =  [0.       pi/3        0.];        %landing of rear foot
 
 % ctrl.p1 =  [pi/4     pi/4        0.];       %start of simulation
 % ctrl.p12 = [0        pi/6        pi/2];       %halfway
@@ -53,9 +51,9 @@ ctrl.p5 =  [pi/6     pi/3        0.];        %landing of rear foot
 ll = [0., 0., -2.*pi]; %set generalized coordinate limits
 ul = [pi/2., pi/2., 2.*pi]; %set generalized coordinate limits
 
-x0 = [ctrl.tf1, ctrl.tf2, ctrl.tf3, ctrl.tf4, ctrl.tf5, ctrl.p1, ctrl.p12,ctrl.p2, ctrl.p23, ctrl.p3, ctrl.p34, ctrl.p4, ctrl.p45, ctrl.p5];
-lb = [      .1,       .1,       .1,       .1,       .1,     ll,      ll,      ll,      ll, ll,      ll,      ll,      ll,       ll];
-ub = [      2.,       2.,       2.,       2.,       2.,     ul,      ul,      ul,      ul, ul,      ul,      ul,      ul,       ul];
+x0 = [ctrl.tf1, ctrl.tf2, ctrl.tf3, ctrl.tf4, tf, ctrl.p1, ctrl.p12,ctrl.p2, ctrl.p23, ctrl.p3, ctrl.p34, ctrl.p4, ctrl.p45, ctrl.p5];
+lb = [      .1,       .1,       .1,       .1, .1,     ll,      ll,      ll,      ll, ll,      ll,      ll,      ll,       ll];
+ub = [      2.,       2.,       2.,       2., 2.,     ul,      ul,      ul,      ul, ul,      ul,      ul,      ul,       ul];
 
 x = x0;
 %outfunc = @(x,optimValues,state) output_bounding_sim(x,z0,p);
@@ -83,7 +81,7 @@ ctrl.tf1 = x(1);
 ctrl.tf2 = x(2);
 ctrl.tf3 = x(3);
 ctrl.tf4 = x(4);
-ctrl.tf5 = x(5);
+tf = x(5);
 
 ctrl.p1 =  x(6:8);
 ctrl.p12 = x(9:11);
@@ -95,7 +93,7 @@ ctrl.p4 =  x(24:26);
 ctrl.p45 = x(27:29);
 ctrl.p5 =  x(30:32);
 
-tspan = [0 ctrl.tf5];                                 % set time span
+tspan = [0 tf];                                 % set time span
 [t z u indices] = hybrid_simulation(z0,ctrl,p,tspan); % run simulation
 %% start here to just replay
 % Run the animation
@@ -117,11 +115,11 @@ end
 %   C = [C; 4+i 4+num_sps+2*(i-1)-1; 4+i 4+num_sps+2*(i-1)];
 %end
 
-speed = .125;                                 % set animation speed
+speed = .0625;                                 % set animation speed
 cla                                         % clear axes
 
-%animate_simple(t,R,C,speed)                 % run animation
-animate_simple(t,R,C,speed,'save')                 % run animation
+animate_simple(t,R,C,speed)                 % run animation
+%animate_simple(t,R,C,speed,'save')                 % run animation
 
 %e = energy_all(z,p);
 %com = COM_all(z,p);

@@ -88,7 +88,7 @@ m1 = f1 + ll*sj1hat;     %origin to rear mid joint (knee)
 h1 = m1 + ll*rj1hat;     %origin to rear hip
 
 %this is clunky but it should work...
-num_sps = 8.;
+num_sps = 4.;
 spine_points = [h1]; %this array will keep track of our discretization of the arc.
 vertebra = [h1 + .5*sep*j1hat, h1 - .5*sep*j1hat]; %this array will keep track of points for drawing vertebra.
 dl = (slength/num_sps);
@@ -97,7 +97,8 @@ for i=1:num_sps-1
     new_p = spine_points(:,end) + dl*rotated_i(th+ang);
     vertebra_vect = .5*sep*rotated_j(th+ang);
     spine_points = [spine_points new_p];
-    vertebra = [vertebra new_p+vertebra_vect new_p-vertebra_vect];
+    mid_p = spine_points(:,end) - .5*dl*rotated_i(th+ang);
+    vertebra = [vertebra mid_p+vertebra_vect mid_p-vertebra_vect];
 end
 
 h2 = spine_points(:,end); %front hip
@@ -112,7 +113,8 @@ rcm21 = f2 + c21*sj2hat;
 rcm22 = m2 + c22*rj2hat;
 rm1 = h1; %motors
 rm2 = h2;
-rm_spine = spine_points(:,length(spine_points)/2); %spine points assumed even
+%spine points assumed even, take average of two middle points
+rm_spine = .5*( spine_points(:,length(spine_points)/2) + spine_points(:,length(spine_points)/2 + 1) ); 
 
 rcms = sum(spine_points,2)/num_sps; %let's assume the spine consists of point masses at each spine point
 Is = 0;

@@ -50,8 +50,7 @@ switch iphase
         if t < ctrl.tf3 %really this should be tf1, but we add a buffer for safety.
             [p1,p2,p3] = get_control(0., ctrl.tf1, ctrl.p1, ctrl.p12, ctrl.p2);
         else
-            [p1,p2,p3] = get_control(ctrl.tf4, ctrl.tf5, ctrl.p1, ctrl.p12, ctrl.p2); %control is periodic
-        end
+            [p1,p2,p3] = get_control(ctrl.tf4, ctrl.tf1, ctrl.p1, ctrl.p12, ctrl.p2);
     case 1          % 1: no feet in contact
         if t < ctrl.tf2                             %first flight phase
             [p1,p2,p3] = get_control(ctrl.tf1, ctrl.tf2, ctrl.p2, ctrl.p23, ctrl.p3);
