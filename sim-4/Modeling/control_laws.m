@@ -17,9 +17,9 @@ function u = control_laws(t,z,ctrl,p,iphase)
         end
     end
 
-a1_max = .8;
-a2_max = .8;
-phi_max = .8;
+a1_max = .6;
+a2_max = .6;
+phi_max = .6;
 
 
     function [u1,u2,u3] = pd_control(a1d,a2d,phid)

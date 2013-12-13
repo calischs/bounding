@@ -5,7 +5,7 @@ function [f,cineq,ceq] = computeall(x,ctrl,p)
     %ctrl.bent = x(4);
     %ctrl.spine_amp = x(5);
     
-    tspan = [0, 3*ctrl.T];
+    tspan = [0, 2*ctrl.T];
     [tout zout uout indices iphases] = hybrid_simulation(ctrl,p,tspan);
 
     %%%

@@ -1,8 +1,8 @@
 %clear
 setpath
 p = parameters();
-%history.x = [];
-%history.fval = [];
+history.x = [];
+history.fval = [];
 
 %%
 %we're going to mimic the trajectories we've been creating for the physical
@@ -13,21 +13,22 @@ p = parameters();
 % bent: amplitude of leg bent
 % spine_amp: amplitude of spine
 %can include spine_zero and spine_shift later.
-ctrl.T = .2;
-ctrl.ramp = .06;
+ctrl.T = .4;
+ctrl.ramp = .08;
 ctrl.stand = (90-70)* pi/180.;
-ctrl.bent =  (90-55) * pi/180.;
-ctrl.spine_amp = -0 * pi/180.;
+ctrl.bent =  (90-50) * pi/180.;
+ctrl.spine_amp = -25 * pi/180.;
+ctrl.spine_shift = .25;
 
 x0 = [ctrl.T];
 lb = [.1];
-ub = [1.];
+ub = [2.];
 
 %x0 = [ctrl.T, ctrl.ramp, ctrl.stand, ctrl.bent, ctrl.spine_amp];
 %lb = [     0.,      0.,          0.,        0.,             0.];
 %ub = [      1.,     .2,        pi/2,      pi/2,           pi/2];
 
-%[x,history] = runopt(x0,ctrl,lb,ub,p,history);
+[x,history] = runopt(x0,ctrl,lb,ub,p,history);
 
 %% start here to avoid optimization
 %x = x0;
@@ -39,7 +40,7 @@ ctrl.T = x(1);
 %ctrl.bent = x(4);
 %ctrl.spine_amp = x(5);
 
-tspan = [0 3*ctrl.T];                                 % set time span
+tspan = [0 2*ctrl.T];                                 % set time span
 [t z u indices iphases] = hybrid_simulation(ctrl,p,tspan); % run simulation
 %% start here to just replay
 % Run the animation

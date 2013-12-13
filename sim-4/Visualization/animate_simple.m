@@ -37,6 +37,34 @@ elseif strcmp(varargin{1},'save')
         writeVideo(writerObj,A(ii));
     end
     %movie2avi(A, 'test')    % save the array of frames to a movie
+elseif strcmp(varargin{1},'gif')
+    fps = 400;                                         % playback speed
+    tanim = linspace(t(1),t(end),round(t(end)*fps));  % set desired time points
+    Ranim = interp1(t',R',tanim', 'linear')';         % interpolate point coordinates 
+    filename = 'test.gif';
+    for ii = 1:length(tanim)
+        drawlines(Ranim(:,ii),C,legline);             % draw the lines at that time
+        im = frame2im(getframe(gca));
+        [imind,cm] = rgb2ind(im,256,'nodither');
+        if ii == 1;
+          imwrite(imind,cm,filename, 'Loopcount',inf,'DelayTime',0);
+        else
+          imwrite(imind,cm,filename,'WriteMode','append','DelayTime',0);
+        end
+    end
+elseif strcmp(varargin{1},'frames')
+    fps = 400;                                         % playback speed
+    tanim = linspace(t(1),t(end),round(t(end)*fps));  % set desired time points
+    Ranim = interp1(t',R',tanim', 'linear')';         % interpolate point coordinates 
+    filename = 'frames/test-';
+    extension = '.png';
+    for ii = 1:length(tanim)
+        drawlines(Ranim(:,ii),C,legline);             % draw the lines at that time
+        im = frame2im(getframe(gca));
+        [imind,cm] = rgb2ind(im,256,'nodither');
+        name = strcat(filename, num2str(ii), extension);
+        imwrite(imind,cm,name);
+    end    
 end
 end
 

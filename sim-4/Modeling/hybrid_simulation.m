@@ -23,12 +23,14 @@ zth0 = -atan2( (cos(a1) - cos(a2))*2*leg_segment_length,  spine_length );
 z0 =      [0  0 0  0   zth0      0.  a1  0.   a2    0.    0    0.]; 
 
 %pre calculate the array for control
+f = 500; %frequence
 spine_p = ctrl.spine_amp;
 spine_m = -ctrl.spine_amp;
 ramp = ctrl.ramp;
 w = .5*(1-2*ramp);
 bent = ctrl.bent;
 stand = ctrl.stand;
+spine_shift = round(ctrl.spine_shift*f*ctrl.T);
 a1 = [0., .5*w, .5*w+ramp, 1.5*w+ramp, 1.5*w+2*ramp, 1.;...
 	  stand, stand, bent, bent, stand, stand];
 a2 = [0., .5*w, .5*w+ramp, 1.5*w+ramp, 1.5*w+2*ramp, 1.;...
@@ -38,7 +40,7 @@ phi = [0., .5*w, .5*w+ramp, 1.5*w+ramp, 1.5*w+2*ramp, 1.;...
 a1(1,:) = a1(1,:)*ctrl.T;
 a2(1,:) = a2(1,:)*ctrl.T;
 phi(1,:) = phi(1,:)*ctrl.T;
-t = 0:1/500:ctrl.T;
+t = 0:1/f:ctrl.T;
 
 a1_v = interp1(a1(1,:)',a1(2,:)',t);
 a2_v = interp1(a2(1,:)',a2(2,:)',t);
@@ -47,14 +49,15 @@ phi_v = interp1(phi(1,:)',phi(2,:)',t);
 a1_v = smooth(t,a1_v,.2,'lowess');
 a2_v = smooth(t,a2_v,.2,'lowess');
 phi_v = smooth(t,phi_v,.2,'lowess');
+phi_v = circshift(phi_v,[-spine_shift,0]);
 
-% hold on
-% plot(a1(1,:)',a1(2,:)');
-% plot(t,a1_v);
-% plot(a2(1,:)',a2(2,:)');
-% plot(t,a2_v);
-% plot(phi(1,:)',phi(2,:)');
-% plot(t,phi_v);
+hold on
+plot(a1(1,:)',a1(2,:)');
+plot(t,a1_v);
+plot(a2(1,:)',a2(2,:)');
+plot(t,a2_v);
+plot(phi(1,:)',phi(2,:)');
+plot(t,phi_v);
 
 ctrl.t = t;
 ctrl.a1_v = a1_v;
